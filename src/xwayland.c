@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+#include <stdbool.h>
 #define _POSIX_C_SOURCE 200809L
 #include <assert.h>
 #include <stdlib.h>
@@ -250,36 +251,22 @@ handle_commit(struct wl_listener *listener, void *data)
 static void
 handle_request_move(struct wl_listener *listener, void *data)
 {
-	/*
-	 * This event is raised when a client would like to begin an interactive
-	 * move, typically because the user clicked on their client-side
-	 * decorations. Note that a more sophisticated compositor should check
-	 * the provided serial against a list of button press serials sent to
-	 * this client, to prevent the client from requesting this whenever they
-	 * want.
-	 */
-	struct view *view = wl_container_of(listener, view, request_move);
-	if (view == view->server->seat.pressed.view) {
-		interactive_begin(view, LAB_INPUT_STATE_MOVE, 0);
-	}
+
+	// struct view *view = wl_container_of(listener, view, request_move);
+	// if (view == view->server->seat.pressed.view) {
+	// 	interactive_begin(view, LAB_INPUT_STATE_MOVE, 0);
+	// }
 }
 
 static void
 handle_request_resize(struct wl_listener *listener, void *data)
 {
-	/*
-	 * This event is raised when a client would like to begin an interactive
-	 * resize, typically because the user clicked on their client-side
-	 * decorations. Note that a more sophisticated compositor should check
-	 * the provided serial against a list of button press serials sent to
-	 * this client, to prevent the client from requesting this whenever they
-	 * want.
-	 */
-	struct wlr_xwayland_resize_event *event = data;
-	struct view *view = wl_container_of(listener, view, request_resize);
-	if (view == view->server->seat.pressed.view) {
-		interactive_begin(view, LAB_INPUT_STATE_RESIZE, event->edges);
-	}
+
+	// struct wlr_xwayland_resize_event *event = data;
+	// struct view *view = wl_container_of(listener, view, request_resize);
+	// if (view == view->server->seat.pressed.view) {
+	// 	interactive_begin(view, LAB_INPUT_STATE_RESIZE, event->edges);
+	// }
 }
 
 static void
@@ -452,14 +439,7 @@ handle_request_maximize(struct wl_listener *listener, void *data)
 		}
 	}
 
-	enum view_axis maximize = VIEW_AXIS_NONE;
-	if (surf->maximized_vert) {
-		maximize |= VIEW_AXIS_VERTICAL;
-	}
-	if (surf->maximized_horz) {
-		maximize |= VIEW_AXIS_HORIZONTAL;
-	}
-	view_maximize(view, maximize, /*store_natural_geometry*/ true);
+	view_set_fullscreen(view, true);
 }
 
 static void
@@ -604,8 +584,6 @@ handle_map_request(struct wl_listener *listener, void *data)
 	struct xwayland_view *xwayland_view =
 		wl_container_of(listener, xwayland_view, map_request);
 	struct view *view = &xwayland_view->base;
-	struct wlr_xwayland_surface *xsurface = xwayland_view->xwayland_surface;
-
 	if (view->mapped) {
 		/* Probably shouldn't happen, but be sure */
 		return;
@@ -615,38 +593,8 @@ handle_map_request(struct wl_listener *listener, void *data)
 	wlr_scene_node_set_enabled(&view->scene_tree->node, false);
 	ensure_initial_geometry_and_output(view);
 
-	/*
-	 * Per the Extended Window Manager Hints (EWMH) spec: "The Window
-	 * Manager SHOULD honor _NET_WM_STATE whenever a withdrawn window
-	 * requests to be mapped."
-	 *
-	 * The following order of operations is intended to reduce the
-	 * number of resize (Configure) events:
-	 *   1. set fullscreen state
-	 *   2. set decorations (depends on fullscreen state)
-	 *   3. set maximized (geometry depends on decorations)
-	 */
-	view_set_fullscreen(view, xsurface->fullscreen);
-	if (!view->been_mapped) {
-		if (want_deco(xsurface)) {
-			view_set_ssd_mode(view, LAB_SSD_MODE_FULL);
-		} else {
-			view_set_ssd_mode(view, LAB_SSD_MODE_NONE);
-		}
-	}
-	enum view_axis axis = VIEW_AXIS_NONE;
-	if (xsurface->maximized_horz) {
-		axis |= VIEW_AXIS_HORIZONTAL;
-	}
-	if (xsurface->maximized_vert) {
-		axis |= VIEW_AXIS_VERTICAL;
-	}
-	view_maximize(view, axis, /*store_natural_geometry*/ true);
-	/*
-	 * We could also call set_initial_position() here, but it's not
-	 * really necessary until the view is actually mapped (and at
-	 * that point the output layout is known for sure).
-	 */
+	view_set_fullscreen(view, true);
+
 }
 
 static void

@@ -159,10 +159,9 @@ struct ssd_part *ssd_get_part(
 void ssd_destroy_parts(struct wl_list *list);
 
 /* SSD internal */
-void ssd_titlebar_create(struct ssd *ssd);
+// void ssd_titlebar_create(struct ssd *ssd);
 void ssd_titlebar_update(struct ssd *ssd);
 void ssd_titlebar_destroy(struct ssd *ssd);
-bool ssd_should_be_squared(struct ssd *ssd);
 
 void ssd_border_create(struct ssd *ssd);
 void ssd_border_update(struct ssd *ssd);

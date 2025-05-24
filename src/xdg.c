@@ -8,7 +8,6 @@
 #include "decorations.h"
 #include "foreign-toplevel.h"
 #include "labwc.h"
-#include "menu/menu.h"
 #include "node.h"
 #include "snap-constraints.h"
 #include "view.h"
@@ -143,10 +142,10 @@ handle_commit(struct wl_listener *listener, void *data)
 		if (toplevel->requested.fullscreen) {
 			set_fullscreen_from_request(view, &toplevel->requested);
 		}
-		if (toplevel->requested.maximized) {
-			view_maximize(view, VIEW_AXIS_BOTH,
-				/*store_natural_geometry*/ true);
-		}
+		// if (toplevel->requested.maximized) {
+		// 	// view_maximize(view, VIEW_AXIS_BOTH,
+		// 		// /*store_natural_geometry*/ true);
+		// }
 		return;
 	}
 
@@ -346,36 +345,23 @@ handle_destroy(struct wl_listener *listener, void *data)
 static void
 handle_request_move(struct wl_listener *listener, void *data)
 {
-	/*
-	 * This event is raised when a client would like to begin an interactive
-	 * move, typically because the user clicked on their client-side
-	 * decorations. Note that a more sophisticated compositor should check
-	 * the provided serial against a list of button press serials sent to
-	 * this client, to prevent the client from requesting this whenever they
-	 * want.
-	 */
-	struct view *view = wl_container_of(listener, view, request_move);
-	if (view == view->server->seat.pressed.view) {
-		interactive_begin(view, LAB_INPUT_STATE_MOVE, 0);
-	}
+	// 	 struct view *view = wl_container_of(listener, view, request_move);
+	//  if (view == view->server->seat.pressed.view) {
+	// 	 interactive_begin(view, LAB_INPUT_STATE_MOVE, 0);
+	//  }
+ 
 }
 
 static void
 handle_request_resize(struct wl_listener *listener, void *data)
 {
-	/*
-	 * This event is raised when a client would like to begin an interactive
-	 * resize, typically because the user clicked on their client-side
-	 * decorations. Note that a more sophisticated compositor should check
-	 * the provided serial against a list of button press serials sent to
-	 * this client, to prevent the client from requesting this whenever they
-	 * want.
-	 */
-	struct wlr_xdg_toplevel_resize_event *event = data;
-	struct view *view = wl_container_of(listener, view, request_resize);
-	if (view == view->server->seat.pressed.view) {
-		interactive_begin(view, LAB_INPUT_STATE_RESIZE, event->edges);
-	}
+
+	//  struct wlr_xdg_toplevel_resize_event *event = data;
+	//  struct view *view = wl_container_of(listener, view, request_resize);
+	//  if (view == view->server->seat.pressed.view) {
+	// 	 interactive_begin(view, LAB_INPUT_STATE_RESIZE, event->edges);
+	//  }
+ 
 }
 
 static void
@@ -402,9 +388,7 @@ handle_request_maximize(struct wl_listener *listener, void *data)
 	if (!view->mapped && !view->output) {
 		view_set_output(view, output_nearest_to_cursor(view->server));
 	}
-	bool maximized = toplevel->requested.maximized;
-	view_maximize(view, maximized ? VIEW_AXIS_BOTH : VIEW_AXIS_NONE,
-		/*store_natural_geometry*/ true);
+	view_set_fullscreen(view, true);
 }
 
 static void
@@ -426,21 +410,6 @@ handle_request_fullscreen(struct wl_listener *listener, void *data)
 	}
 	set_fullscreen_from_request(view,
 		&xdg_toplevel_from_view(view)->requested);
-}
-
-static void
-handle_request_show_window_menu(struct wl_listener *listener, void *data)
-{
-	struct xdg_toplevel_view *xdg_toplevel_view = wl_container_of(
-		listener, xdg_toplevel_view, request_show_window_menu);
-	struct server *server = xdg_toplevel_view->base.server;
-
-	struct menu *menu = menu_get_by_id(server, "client-menu");
-	assert(menu);
-	menu->triggered_by_view = &xdg_toplevel_view->base;
-
-	struct wlr_cursor *cursor = server->seat.cursor;
-	menu_open_root(menu, cursor->x, cursor->y);
 }
 
 static void
@@ -716,12 +685,6 @@ xdg_toplevel_view_map(struct view *view)
 	}
 
 	if (!view->been_mapped) {
-		if (view_wants_decorations(view)) {
-			view_set_ssd_mode(view, LAB_SSD_MODE_FULL);
-		} else {
-			view_set_ssd_mode(view, LAB_SSD_MODE_NONE);
-		}
-
 		/*
 		 * Set initial "pending" dimensions. "Current"
 		 * dimensions remain zero until handle_commit().
@@ -974,7 +937,6 @@ xdg_toplevel_new(struct wl_listener *listener, void *data)
 
 	/* Events specific to XDG toplevel views */
 	CONNECT_SIGNAL(toplevel, xdg_toplevel_view, set_app_id);
-	CONNECT_SIGNAL(toplevel, xdg_toplevel_view, request_show_window_menu);
 	CONNECT_SIGNAL(xdg_surface, xdg_toplevel_view, new_popup);
 
 	view_init(view);

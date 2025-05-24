@@ -162,8 +162,8 @@ ssd_get_part_type(const struct ssd *ssd, struct wlr_scene_node *node,
 		part_list = &ssd->titlebar.active.parts;
 
 	/* extents */
-	} else if (node->parent == ssd->extents.tree) {
-		part_list = &ssd->extents.parts;
+	// } else if (node->parent == ssd->extents.tree) {
+	// 	part_list = &ssd->extents.parts;
 
 	/* active border */
 	} else if (node->parent == ssd->border.active.tree) {
@@ -228,38 +228,6 @@ ssd_resize_edges(enum ssd_part_type type)
 	}
 }
 
-struct ssd *
-ssd_create(struct view *view, bool active)
-{
-	assert(view);
-	struct ssd *ssd = znew(*ssd);
-
-	ssd->view = view;
-	ssd->tree = wlr_scene_tree_create(view->scene_tree);
-	wlr_scene_node_lower_to_bottom(&ssd->tree->node);
-	ssd->titlebar.height = view->server->theme->titlebar_height;
-	ssd_shadow_create(ssd);
-	ssd_extents_create(ssd);
-	/*
-	 * We need to create the borders after the titlebar because it sets
-	 * ssd->state.squared which ssd_border_create() reacts to.
-	 * TODO: Set the state here instead so the order does not matter
-	 * anymore.
-	 */
-	ssd_titlebar_create(ssd);
-	ssd_border_create(ssd);
-	if (view->ssd_titlebar_hidden) {
-		/* Ensure we keep the old state on Reconfigure or when exiting fullscreen */
-		ssd_set_titlebar(ssd, false);
-	}
-	ssd->margin = ssd_thickness(view);
-	ssd_set_active(ssd, active);
-	ssd_enable_keybind_inhibit_indicator(ssd, view->inhibits_keybinds);
-	ssd->state.geometry = view->current;
-
-	return ssd;
-}
-
 struct border
 ssd_get_margin(const struct ssd *ssd)
 {
@@ -291,53 +259,8 @@ ssd_update_geometry(struct ssd *ssd)
 
 	struct view *view = ssd->view;
 	assert(view);
-
-	struct wlr_box cached = ssd->state.geometry;
-	struct wlr_box current = view->current;
-
-	int eff_width = current.width;
-	int eff_height = view_effective_height(view, /* use_pending */ false);
-
-	bool update_area = eff_width != cached.width || eff_height != cached.height;
-	bool update_extents = update_area
-		|| current.x != cached.x || current.y != cached.y;
-
-	bool maximized = view->maximized == VIEW_AXIS_BOTH;
-	bool squared = ssd_should_be_squared(ssd);
-
-	bool state_changed = ssd->state.was_maximized != maximized
-		|| ssd->state.was_shaded != view->shaded
-		|| ssd->state.was_squared != squared
-		|| ssd->state.was_omnipresent != view->visible_on_all_workspaces;
-
-	if (update_extents) {
-		ssd_extents_update(ssd);
-	}
-
-	if (update_area || state_changed) {
-		ssd_titlebar_update(ssd);
-		ssd_border_update(ssd);
-		ssd_shadow_update(ssd);
-	}
-
-	if (update_extents) {
-		ssd->state.geometry = current;
-	}
 }
 
-void
-ssd_set_titlebar(struct ssd *ssd, bool enabled)
-{
-	if (!ssd || ssd->titlebar.tree->node.enabled == enabled) {
-		return;
-	}
-	wlr_scene_node_set_enabled(&ssd->titlebar.tree->node, enabled);
-	ssd->titlebar.height = enabled ? ssd->view->server->theme->titlebar_height : 0;
-	ssd_border_update(ssd);
-	ssd_extents_update(ssd);
-	ssd_shadow_update(ssd);
-	ssd->margin = ssd_thickness(ssd->view);
-}
 
 void
 ssd_destroy(struct ssd *ssd)
@@ -356,10 +279,6 @@ ssd_destroy(struct ssd *ssd)
 	}
 
 	/* Destroy subcomponents */
-	ssd_titlebar_destroy(ssd);
-	ssd_border_destroy(ssd);
-	ssd_extents_destroy(ssd);
-	ssd_shadow_destroy(ssd);
 	wlr_scene_node_destroy(&ssd->tree->node);
 
 	free(ssd);
@@ -444,33 +363,6 @@ ssd_set_active(struct ssd *ssd, bool active)
 	}
 }
 
-void
-ssd_enable_shade(struct ssd *ssd, bool enable)
-{
-	if (!ssd) {
-		return;
-	}
-	ssd_titlebar_update(ssd);
-	ssd_border_update(ssd);
-	wlr_scene_node_set_enabled(&ssd->extents.tree->node, !enable);
-	ssd_shadow_update(ssd);
-}
-
-void
-ssd_enable_keybind_inhibit_indicator(struct ssd *ssd, bool enable)
-{
-	if (!ssd) {
-		return;
-	}
-
-	float *color = enable
-		? rc.theme->window_toggled_keybinds_color
-		: rc.theme->window[THEME_ACTIVE].border_color;
-
-	struct ssd_part *part = ssd_get_part(&ssd->border.active.parts, LAB_SSD_PART_TOP);
-	struct wlr_scene_rect *rect = wlr_scene_rect_from_node(part->node);
-	wlr_scene_rect_set_color(rect, color);
-}
 
 struct ssd_hover_state *
 ssd_hover_state_new(void)

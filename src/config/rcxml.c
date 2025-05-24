@@ -144,58 +144,6 @@ parse_window_type(const char *type)
  * shade        S           Shade toggle
  * desk         D           All-desktops toggle (aka omnipresent)
  */
-static void
-fill_section(const char *content, struct wl_list *list, uint32_t *found_buttons)
-{
-	gchar **identifiers = g_strsplit(content, ",", -1);
-	for (size_t i = 0; identifiers[i]; ++i) {
-		char *identifier = identifiers[i];
-		if (string_null_or_empty(identifier)) {
-			continue;
-		}
-		enum ssd_part_type type = LAB_SSD_NONE;
-		if (!strcmp(identifier, "icon")) {
-#if HAVE_LIBSFDO
-			type = LAB_SSD_BUTTON_WINDOW_ICON;
-#else
-			wlr_log(WLR_ERROR, "libsfdo is not linked. "
-				"Replacing 'icon' in titlebar layout with 'menu'.");
-			type = LAB_SSD_BUTTON_WINDOW_MENU;
-#endif
-		} else if (!strcmp(identifier, "menu")) {
-			type = LAB_SSD_BUTTON_WINDOW_MENU;
-		} else if (!strcmp(identifier, "iconify")) {
-			type = LAB_SSD_BUTTON_ICONIFY;
-		} else if (!strcmp(identifier, "max")) {
-			type = LAB_SSD_BUTTON_MAXIMIZE;
-		} else if (!strcmp(identifier, "close")) {
-			type = LAB_SSD_BUTTON_CLOSE;
-		} else if (!strcmp(identifier, "shade")) {
-			type = LAB_SSD_BUTTON_SHADE;
-		} else if (!strcmp(identifier, "desk")) {
-			type = LAB_SSD_BUTTON_OMNIPRESENT;
-		} else {
-			wlr_log(WLR_ERROR, "invalid titleLayout identifier '%s'",
-				identifier);
-			continue;
-		}
-
-		assert(type != LAB_SSD_NONE);
-
-		if (*found_buttons & (1 << type)) {
-			wlr_log(WLR_ERROR, "ignoring duplicated button type '%s'",
-				identifier);
-			continue;
-		}
-
-		*found_buttons |= (1 << type);
-
-		struct title_button *item = znew(*item);
-		item->type = type;
-		wl_list_append(list, &item->link);
-	}
-	g_strfreev(identifiers);
-}
 
 static void
 clear_title_layout(void)
@@ -217,22 +165,9 @@ fill_title_layout(char *content)
 {
 	clear_title_layout();
 
-	struct wl_list *sections[] = {
-		&rc.title_buttons_left,
-		&rc.title_buttons_right,
-	};
 
 	gchar **parts = g_strsplit(content, ":", -1);
 
-	if (g_strv_length(parts) != 2) {
-		wlr_log(WLR_ERROR, "<titlebar><layout> must contain one colon");
-		goto err;
-	}
-
-	uint32_t found_buttons = 0;
-	for (size_t i = 0; parts[i]; ++i) {
-		fill_section(parts[i], sections[i], &found_buttons);
-	}
 
 	rc.title_layout_loaded = true;
 err:
@@ -327,7 +262,7 @@ fill_window_rule(char *nodename, char *content, struct parser_state *state)
 
 	/* Properties */
 	} else if (!strcasecmp(nodename, "serverDecoration")) {
-		set_property(content, &state->current_window_rule->server_decoration);
+		set_property("no", &state->current_window_rule->server_decoration);
 	} else if (!strcasecmp(nodename, "skipTaskbar")) {
 		set_property(content, &state->current_window_rule->skip_taskbar);
 	} else if (!strcasecmp(nodename, "skipWindowSwitcher")) {

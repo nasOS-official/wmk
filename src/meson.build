@@ -20,12 +20,10 @@ labwc_sources = files(
   'placement.c',
   'regions.c',
   'resistance.c',
-  'resize-outlines.c',
   'seat.c',
   'server.c',
   'session-lock.c',
   'snap-constraints.c',
-  'snap.c',
   'tearing.c',
   'theme.c',
   'view.c',
@@ -55,6 +53,5 @@ subdir('config')
 subdir('decorations')
 subdir('foreign-toplevel')
 subdir('input')
-subdir('menu')
 subdir('ssd')
 subdir('protocols')

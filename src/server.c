@@ -44,7 +44,6 @@
 #include "labwc.h"
 #include "layers.h"
 #include "magnifier.h"
-#include "menu/menu.h"
 #include "output-state.h"
 #include "output-virtual.h"
 #include "regions.h"
@@ -80,15 +79,9 @@ reload_config_and_theme(struct server *server)
 	desktop_entry_init(server);
 #endif
 
-	struct view *view;
-	wl_list_for_each(view, &server->views, link) {
-		view_reload_ssd(view);
-	}
 
-	menu_reconfigure(server);
 	seat_reconfigure(server);
 	regions_reconfigure(server);
-	resize_indicator_reconfigure(server);
 	kde_server_decoration_update_default();
 	workspaces_reconfigure(server);
 }

@@ -16,7 +16,7 @@
 #include "debug.h"
 #include "labwc.h"
 #include "magnifier.h"
-#include "menu/menu.h"
+
 #include "osd.h"
 #include "output-virtual.h"
 #include "regions.h"
@@ -662,94 +662,6 @@ action_list_free(struct wl_list *action_list)
 	}
 }
 
-static void
-show_menu(struct server *server, struct view *view, struct cursor_context *ctx,
-		const char *menu_name, bool at_cursor,
-		const char *pos_x, const char *pos_y)
-{
-	if (server->input_mode != LAB_INPUT_STATE_PASSTHROUGH
-			&& server->input_mode != LAB_INPUT_STATE_MENU) {
-		/* Prevent opening a menu while resizing / moving a view */
-		return;
-	}
-
-	struct menu *menu = menu_get_by_id(server, menu_name);
-	if (!menu) {
-		return;
-	}
-
-	int x = server->seat.cursor->x;
-	int y = server->seat.cursor->y;
-
-	/* The client menu needs an active client */
-	bool is_client_menu = !strcasecmp(menu_name, "client-menu");
-	if (is_client_menu && !view) {
-		return;
-	}
-	/* Place menu in the view corner if desired (and menu is not root-menu) */
-	if (!at_cursor && view) {
-		struct wlr_box extent = ssd_max_extents(view);
-		x = extent.x;
-		y = view->current.y;
-		/* Push the client menu underneath the button */
-		if (is_client_menu && ssd_part_contains(
-				LAB_SSD_BUTTON, ctx->type)) {
-			assert(ctx->node);
-			int lx, ly;
-			wlr_scene_node_coords(ctx->node, &lx, &ly);
-			/* MAX() prevents negative x when the window is maximized */
-			x = MAX(x, lx - server->theme->menu_border_width);
-		}
-	}
-
-	/*
-	 * determine placement by looking at x and y
-	 * x/y can be number, "center" or a %percent of screen dimensions
-	 */
-	if (pos_x && pos_y) {
-		struct output *output = output_nearest_to(server,
-				server->seat.cursor->x, server->seat.cursor->y);
-		struct wlr_box usable = output_usable_area_in_layout_coords(output);
-
-		if (!strcasecmp(pos_x, "center")) {
-			x = (usable.width - menu->size.width) / 2;
-		} else if (strchr(pos_x, '%')) {
-			x = (usable.width * atoi(pos_x)) / 100;
-		} else {
-			if (pos_x[0] == '-') {
-				int neg_x = strtol(pos_x, NULL, 10);
-				x = usable.width + neg_x;
-			} else {
-				x = atoi(pos_x);
-			}
-		}
-
-		if (!strcasecmp(pos_y, "center")) {
-			y = (usable.height / 2) - (menu->size.height / 2);
-		} else if (strchr(pos_y, '%')) {
-			y = (usable.height * atoi(pos_y)) / 100;
-		} else {
-			if (pos_y[0] == '-') {
-				int neg_y = strtol(pos_y, NULL, 10);
-				y = usable.height + neg_y;
-			} else {
-				y = atoi(pos_y);
-			}
-		}
-		/* keep menu from being off screen */
-		x = MAX(x, 0);
-		x = MIN(x, usable.width - 1);
-		y = MAX(y, 0);
-		y = MIN(y, usable.height - 1);
-		/* adjust for which monitor to appear on */
-		x += usable.x;
-		y += usable.y;
-	}
-
-	/* Replaced by next show_menu() or cleaned on view_destroy() */
-	menu->triggered_by_view = view;
-	menu_open_root(menu, x, y);
-}
 
 static struct view *
 view_for_action(struct view *activator, struct server *server,
@@ -932,45 +844,29 @@ actions_run(struct view *activator, struct server *server,
 			wl_display_terminate(server->wl_display);
 			break;
 		case ACTION_TYPE_MOVE_TO_EDGE:
-			if (view) {
-				/* Config parsing makes sure that direction is a valid direction */
-				enum view_edge edge = action_get_int(action, "direction", 0);
-				bool snap_to_windows = action_get_bool(action, "snapWindows", true);
-				view_move_to_edge(view, edge, snap_to_windows);
-			}
+			// if (view) {
+			// 	/* Config parsing makes sure that direction is a valid direction */
+			// 	enum view_edge edge = action_get_int(action, "direction", 0);
+			// 	bool snap_to_windows = action_get_bool(action, "snapWindows", true);
+			// 	view_move_to_edge(view, edge, snap_to_windows);
+			// }
 			break;
 		case ACTION_TYPE_TOGGLE_SNAP_TO_EDGE:
 		case ACTION_TYPE_SNAP_TO_EDGE:
-			if (view) {
-				/* Config parsing makes sure that direction is a valid direction */
-				enum view_edge edge = action_get_int(action, "direction", 0);
-				if (action->type == ACTION_TYPE_TOGGLE_SNAP_TO_EDGE
-						&& view->maximized == VIEW_AXIS_NONE
-						&& !view->fullscreen
-						&& view_is_tiled(view)
-						&& view->tiled == edge) {
-					view_set_untiled(view);
-					view_apply_natural_geometry(view);
-					break;
-				}
-				view_snap_to_edge(view, edge,
-					/*across_outputs*/ true,
-					/*store_natural_geometry*/ true);
-			}
 			break;
 		case ACTION_TYPE_GROW_TO_EDGE:
-			if (view) {
-				/* Config parsing makes sure that direction is a valid direction */
-				enum view_edge edge = action_get_int(action, "direction", 0);
-				view_grow_to_edge(view, edge);
-			}
+			// if (view) {
+			// 	/* Config parsing makes sure that direction is a valid direction */
+			// 	enum view_edge edge = action_get_int(action, "direction", 0);
+			// 	view_grow_to_edge(view, edge);
+			// }
 			break;
 		case ACTION_TYPE_SHRINK_TO_EDGE:
-			if (view) {
-				/* Config parsing makes sure that direction is a valid direction */
-				enum view_edge edge = action_get_int(action, "direction", 0);
-				view_shrink_to_edge(view, edge);
-			}
+			// if (view) {
+			// 	/* Config parsing makes sure that direction is a valid direction */
+			// 	enum view_edge edge = action_get_int(action, "direction", 0);
+			// 	view_shrink_to_edge(view, edge);
+			// }
 			break;
 		case ACTION_TYPE_NEXT_WINDOW:
 			if (server->input_mode == LAB_INPUT_STATE_WINDOW_SWITCHER) {
@@ -989,35 +885,28 @@ actions_run(struct view *activator, struct server *server,
 		case ACTION_TYPE_RECONFIGURE:
 			kill(getpid(), SIGHUP);
 			break;
-		case ACTION_TYPE_SHOW_MENU:
-			show_menu(server, view, &ctx,
-				action_get_str(action, "menu", NULL),
-				action_get_bool(action, "atCursor", true),
-				action_get_str(action, "x.position", NULL),
-				action_get_str(action, "y.position", NULL));
-			break;
 		case ACTION_TYPE_TOGGLE_MAXIMIZE:
-			if (view) {
-				enum view_axis axis = action_get_int(action,
-					"direction", VIEW_AXIS_BOTH);
-				view_toggle_maximize(view, axis);
-			}
+			// if (view) {
+			// 	enum view_axis axis = action_get_int(action,
+			// 		"direction", VIEW_AXIS_BOTH);
+			// 	view_toggle_maximize(view, axis);
+			// }
 			break;
 		case ACTION_TYPE_MAXIMIZE:
-			if (view) {
-				enum view_axis axis = action_get_int(action,
-					"direction", VIEW_AXIS_BOTH);
-				view_maximize(view, axis,
-					/*store_natural_geometry*/ true);
-			}
+			// if (view) {
+			// 	enum view_axis axis = action_get_int(action,
+			// 		"direction", VIEW_AXIS_BOTH);
+			// 	view_maximize(view, axis,
+			// 		/*store_natural_geometry*/ true);
+			// }
 			break;
 		case ACTION_TYPE_UNMAXIMIZE:
-			if (view) {
-				enum view_axis axis = action_get_int(action,
-					"direction", VIEW_AXIS_BOTH);
-				view_maximize(view, view->maximized & ~axis,
-					/*store_natural_geometry*/ true);
-			}
+			// if (view) {
+			// 	enum view_axis axis = action_get_int(action,
+			// 		"direction", VIEW_AXIS_BOTH);
+			// 	view_maximize(view, view->maximized & ~axis,
+			// 		/*store_natural_geometry*/ true);
+			// }
 			break;
 		case ACTION_TYPE_TOGGLE_FULLSCREEN:
 			if (view) {
@@ -1025,18 +914,18 @@ actions_run(struct view *activator, struct server *server,
 			}
 			break;
 		case ACTION_TYPE_SET_DECORATIONS:
-			if (view) {
-				enum ssd_mode mode = action_get_int(action,
-					"decorations", LAB_SSD_MODE_FULL);
-				bool force_ssd = action_get_bool(action,
-					"forceSSD", false);
-				view_set_decorations(view, mode, force_ssd);
-			}
+			// if (view) {
+			// 	enum ssd_mode mode = action_get_int(action,
+			// 		"decorations", LAB_SSD_MODE_FULL);
+			// 	bool force_ssd = action_get_bool(action,
+			// 		"forceSSD", false);
+			// 	view_set_decorations(view, mode, force_ssd);
+			// }
 			break;
 		case ACTION_TYPE_TOGGLE_DECORATIONS:
-			if (view) {
-				view_toggle_decorations(view);
-			}
+			// if (view) {
+			// 	view_toggle_decorations(view);
+			// }
 			break;
 		case ACTION_TYPE_TOGGLE_ALWAYS_ON_TOP:
 			if (view) {
@@ -1067,9 +956,6 @@ actions_run(struct view *activator, struct server *server,
 			}
 			break;
 		case ACTION_TYPE_MOVE:
-			if (view) {
-				interactive_begin(view, LAB_INPUT_STATE_MOVE, 0);
-			}
 			break;
 		case ACTION_TYPE_RAISE:
 			if (view) {
@@ -1079,66 +965,6 @@ actions_run(struct view *activator, struct server *server,
 		case ACTION_TYPE_LOWER:
 			if (view) {
 				view_move_to_back(view);
-			}
-			break;
-		case ACTION_TYPE_RESIZE:
-			if (view) {
-				uint32_t resize_edges = cursor_get_resize_edges(
-					server->seat.cursor, &ctx);
-				interactive_begin(view, LAB_INPUT_STATE_RESIZE,
-					resize_edges);
-			}
-			break;
-		case ACTION_TYPE_RESIZE_RELATIVE:
-			if (view) {
-				int left = action_get_int(action, "left", 0);
-				int right = action_get_int(action, "right", 0);
-				int top = action_get_int(action, "top", 0);
-				int bottom = action_get_int(action, "bottom", 0);
-				view_resize_relative(view, left, right, top, bottom);
-			}
-			break;
-		case ACTION_TYPE_MOVETO:
-			if (view) {
-				int x = action_get_int(action, "x", 0);
-				int y = action_get_int(action, "y", 0);
-				struct border margin = ssd_thickness(view);
-				view_move(view, x + margin.left, y + margin.top);
-			}
-			break;
-		case ACTION_TYPE_RESIZETO:
-			if (view) {
-				int width = action_get_int(action, "width", 0);
-				int height = action_get_int(action, "height", 0);
-
-				/*
-				 * To support only setting one of width/height
-				 * in <action name="ResizeTo" width="" height=""/>
-				 * we fall back to current dimension when unset.
-				 */
-				struct wlr_box box = {
-					.x = view->pending.x,
-					.y = view->pending.y,
-					.width = width ? : view->pending.width,
-					.height = height ? : view->pending.height,
-				};
-				view_set_shade(view, false);
-				view_move_resize(view, box);
-			}
-			break;
-		case ACTION_TYPE_MOVE_RELATIVE:
-			if (view) {
-				int x = action_get_int(action, "x", 0);
-				int y = action_get_int(action, "y", 0);
-				view_move_relative(view, x, y);
-			}
-			break;
-		case ACTION_TYPE_MOVETO_CURSOR:
-			wlr_log(WLR_ERROR,
-				"Action MoveToCursor is deprecated. To ensure your config works in future labwc "
-				"releases, please use <action name=\"AutoPlace\" policy=\"cursor\">");
-			if (view) {
-				view_move_to_cursor(view);
 			}
 			break;
 		case ACTION_TYPE_SEND_TO_DESKTOP:
@@ -1193,38 +1019,38 @@ actions_run(struct view *activator, struct server *server,
 			break;
 		case ACTION_TYPE_TOGGLE_SNAP_TO_REGION:
 		case ACTION_TYPE_SNAP_TO_REGION:
-			if (!view) {
-				break;
-			}
-			output = view->output;
-			if (!output) {
-				break;
-			}
-			const char *region_name = action_get_str(action, "region", NULL);
-			struct region *region = regions_from_name(region_name, output);
-			if (region) {
-				if (action->type == ACTION_TYPE_TOGGLE_SNAP_TO_REGION
-						&& view->maximized == VIEW_AXIS_NONE
-						&& !view->fullscreen
-						&& view_is_tiled(view)
-						&& view->tiled_region == region) {
-					view_set_untiled(view);
-					view_apply_natural_geometry(view);
-					break;
-				}
-				view_snap_to_region(view, region,
-					/*store_natural_geometry*/ true);
-			} else {
-				wlr_log(WLR_ERROR, "Invalid SnapToRegion id: '%s'", region_name);
-			}
+			// if (!view) {
+			// 	break;
+			// }
+			// output = view->output;
+			// if (!output) {
+			// 	break;
+			// }
+			// const char *region_name = action_get_str(action, "region", NULL);
+			// struct region *region = regions_from_name(region_name, output);
+			// if (region) {
+			// 	if (action->type == ACTION_TYPE_TOGGLE_SNAP_TO_REGION
+			// 			&& view->maximized == VIEW_AXIS_NONE
+			// 			&& !view->fullscreen
+			// 			&& view_is_tiled(view)
+			// 			&& view->tiled_region == region) {
+			// 		view_set_untiled(view);
+			// 		view_apply_natural_geometry(view);
+			// 		break;
+			// 	}
+			// 	view_snap_to_region(view, region,
+			// 		/*store_natural_geometry*/ true);
+			// } else {
+			// 	wlr_log(WLR_ERROR, "Invalid SnapToRegion id: '%s'", region_name);
+			// }
 			break;
 		case ACTION_TYPE_UNSNAP:
-			if (view && !view->fullscreen && !view_is_floating(view)) {
-				view_maximize(view, VIEW_AXIS_NONE,
-					/* store_natural_geometry */ false);
-				view_set_untiled(view);
-				view_apply_natural_geometry(view);
-			}
+			// if (view && !view->fullscreen && !view_is_floating(view)) {
+			// 	view_maximize(view, VIEW_AXIS_NONE,
+			// 		/* store_natural_geometry */ false);
+			// 	view_set_untiled(view);
+			// 	view_apply_natural_geometry(view);
+			// }
 			break;
 		case ACTION_TYPE_TOGGLE_KEYBINDS:
 			if (view) {
@@ -1304,21 +1130,6 @@ actions_run(struct view *activator, struct server *server,
 				wlr_log(WLR_ERROR, "force tearing %sabled",
 					view->force_tearing == LAB_STATE_ENABLED
 						? "en" : "dis");
-			}
-			break;
-		case ACTION_TYPE_TOGGLE_SHADE:
-			if (view) {
-				view_set_shade(view, !view->shaded);
-			}
-			break;
-		case ACTION_TYPE_SHADE:
-			if (view) {
-				view_set_shade(view, true);
-			}
-			break;
-		case ACTION_TYPE_UNSHADE:
-			if (view) {
-				view_set_shade(view, false);
 			}
 			break;
 		case ACTION_TYPE_ENABLE_SCROLL_WHEEL_EMULATION:

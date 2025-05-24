@@ -12,7 +12,6 @@
 #include "config/session.h"
 #include "labwc.h"
 #include "theme.h"
-#include "menu/menu.h"
 
 struct rcxml rc = { 0 };
 
@@ -241,8 +240,6 @@ main(int argc, char *argv[])
 	rc.theme = &theme;
 	server.theme = &theme;
 
-	menu_init(&server);
-
 	/* Delay startup of applications until the event loop is ready */
 	struct idle_ctx idle_ctx = {
 		.server = &server,
@@ -255,7 +252,6 @@ main(int argc, char *argv[])
 
 	session_shutdown(&server);
 
-	menu_finish(&server);
 	theme_finish(&theme);
 	rcxml_finish();
 	font_finish();

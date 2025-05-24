@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #include <assert.h>
+#include <stdbool.h>
 #include <wayland-server-core.h>
 #include "common/macros.h"
 #include "common/mem.h"
@@ -17,13 +18,13 @@ foreign_request_minimize(struct foreign_toplevel *toplevel, bool minimized)
 void
 foreign_request_maximize(struct foreign_toplevel *toplevel, enum view_axis axis)
 {
-	view_maximize(toplevel->view, axis, /*store_natural_geometry*/ true);
+	view_set_fullscreen(toplevel->view, true);
 }
 
 void
 foreign_request_fullscreen(struct foreign_toplevel *toplevel, bool fullscreen)
 {
-	view_set_fullscreen(toplevel->view, fullscreen);
+	view_set_fullscreen(toplevel->view, true);
 }
 
 void

@@ -5,7 +5,6 @@
 #include "labwc.h"
 #include "regions.h"
 #include "resize-indicator.h"
-#include "snap.h"
 #include "view.h"
 #include "window-rules.h"
 
@@ -52,116 +51,6 @@ interactive_anchor_to_cursor(struct server *server, struct wlr_box *geo)
 	geo->y = server->grab_box.y + (server->seat.cursor->y - server->grab_y);
 }
 
-void
-interactive_begin(struct view *view, enum input_mode mode, uint32_t edges)
-{
-	/*
-	 * This function sets up an interactive move or resize operation, where
-	 * the compositor stops propagating pointer events to clients and
-	 * instead consumes them itself, to move or resize windows.
-	 */
-	struct server *server = view->server;
-	struct seat *seat = &server->seat;
-
-	if (server->input_mode != LAB_INPUT_STATE_PASSTHROUGH) {
-		return;
-	}
-
-	/* Prevent moving/resizing fixed-position and panel-like views */
-	if (window_rules_get_property(view, "fixedPosition") == LAB_PROP_TRUE
-			|| view_has_strut_partial(view)) {
-		return;
-	}
-
-	enum lab_cursors cursor_shape = LAB_CURSOR_DEFAULT;
-
-	switch (mode) {
-	case LAB_INPUT_STATE_MOVE:
-		if (view->fullscreen) {
-			/**
-			 * We don't allow moving fullscreen windows.
-			 *
-			 * If you think there is a good reason to allow
-			 * it, feel free to open an issue explaining
-			 * your use-case.
-			 */
-			return;
-		}
-
-		if (view_is_floating(view)) {
-			/* Store natural geometry at start of move */
-			view_store_natural_geometry(view);
-			view_invalidate_last_layout_geometry(view);
-		}
-
-		/* Prevent region snapping when just moving via A-Left mousebind */
-		seat->region_prevent_snap = keyboard_get_all_modifiers(seat);
-
-		cursor_shape = LAB_CURSOR_GRAB;
-		break;
-	case LAB_INPUT_STATE_RESIZE:
-		if (view->shaded || view->fullscreen ||
-				view->maximized == VIEW_AXIS_BOTH) {
-			/*
-			 * We don't allow resizing while shaded,
-			 * fullscreen or maximized in both directions.
-			 */
-			return;
-		}
-
-		/*
-		 * Resizing overrides any attempt to restore window
-		 * geometries altered by layout changes.
-		 */
-		view_invalidate_last_layout_geometry(view);
-
-		/*
-		 * If tiled or maximized in only one direction, reset
-		 * maximized/tiled state but keep the same geometry as
-		 * the starting point for the resize.
-		 */
-		view_set_untiled(view);
-		view_restore_to(view, view->pending);
-		cursor_shape = cursor_get_from_edge(edges);
-		break;
-	default:
-		/* Should not be reached */
-		return;
-	}
-
-	server->grabbed_view = view;
-	/* Remember view and cursor positions at start of move/resize */
-	server->grab_x = seat->cursor->x;
-	server->grab_y = seat->cursor->y;
-	server->grab_box = view->current;
-	server->resize_edges = edges;
-
-	seat_focus_override_begin(seat, mode, cursor_shape);
-
-	/*
-	 * Un-tile maximized/tiled view immediately if <unSnapThreshold> is
-	 * zero. Otherwise, un-tile it later in cursor motion handler.
-	 * If the natural geometry is unknown (possible with xdg-shell views),
-	 * then we set a size of 0x0 here and determine the correct geometry
-	 * later. See do_late_positioning() in xdg.c.
-	 */
-	if (mode == LAB_INPUT_STATE_MOVE && !view_is_floating(view)
-			&& rc.unsnap_threshold <= 0) {
-		struct wlr_box natural_geo = view->natural_geometry;
-		interactive_anchor_to_cursor(server, &natural_geo);
-		/* Shaded clients will not process resize events until unshaded */
-		view_set_shade(view, false);
-		view_set_untiled(view);
-		view_restore_to(view, natural_geo);
-	}
-
-	if (rc.resize_indicator) {
-		resize_indicator_show(view);
-	}
-	if (rc.window_edge_strength) {
-		edges_calculate_visibility(server, view);
-	}
-}
 
 enum view_edge
 edge_from_cursor(struct seat *seat, struct output **dest_output)
@@ -207,65 +96,7 @@ edge_from_cursor(struct seat *seat, struct output **dest_output)
 	}
 }
 
-/* Returns true if view was snapped to any edge */
-static bool
-snap_to_edge(struct view *view)
-{
-	struct output *output;
-	enum view_edge edge = edge_from_cursor(&view->server->seat, &output);
-	if (edge == VIEW_EDGE_INVALID) {
-		return false;
-	}
 
-	view_set_output(view, output);
-	/*
-	 * Don't store natural geometry here (it was
-	 * stored already in interactive_begin())
-	 */
-	if (edge == VIEW_EDGE_CENTER) {
-		/* <topMaximize> */
-		view_maximize(view, VIEW_AXIS_BOTH,
-			/*store_natural_geometry*/ false);
-	} else {
-		view_snap_to_edge(view, edge,
-			/*across_outputs*/ false,
-			/*store_natural_geometry*/ false);
-	}
-
-	return true;
-}
-
-static bool
-snap_to_region(struct view *view)
-{
-	if (!regions_should_snap(view->server)) {
-		return false;
-	}
-
-	struct region *region = regions_from_cursor(view->server);
-	if (region) {
-		view_snap_to_region(view, region,
-			/*store_natural_geometry*/ false);
-		return true;
-	}
-	return false;
-}
-
-void
-interactive_finish(struct view *view)
-{
-	if (view->server->grabbed_view != view) {
-		return;
-	}
-
-	if (view->server->input_mode == LAB_INPUT_STATE_MOVE) {
-		if (!snap_to_region(view)) {
-			snap_to_edge(view);
-		}
-	}
-
-	interactive_cancel(view);
-}
 
 /*
  * Cancels interactive move/resize without changing the state of the of
@@ -281,7 +112,6 @@ interactive_cancel(struct view *view)
 
 	overlay_hide(&view->server->seat);
 
-	resize_indicator_hide(view);
 
 	view->server->grabbed_view = NULL;
 

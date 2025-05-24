@@ -12,7 +12,6 @@
 #include "input/keyboard.h"
 #include "input/key-state.h"
 #include "labwc.h"
-#include "menu/menu.h"
 #include "osd.h"
 #include "regions.h"
 #include "view.h"
@@ -434,39 +433,6 @@ handle_change_vt_key(struct server *server, struct keyboard *keyboard,
 	return false;
 }
 
-static void
-handle_menu_keys(struct server *server, struct keysyms *syms)
-{
-	assert(server->input_mode == LAB_INPUT_STATE_MENU);
-
-	for (int i = 0; i < syms->nr_syms; i++) {
-		switch (syms->syms[i]) {
-		case XKB_KEY_Down:
-			menu_item_select_next(server);
-			break;
-		case XKB_KEY_Up:
-			menu_item_select_previous(server);
-			break;
-		case XKB_KEY_Right:
-			menu_submenu_enter(server);
-			break;
-		case XKB_KEY_Left:
-			menu_submenu_leave(server);
-			break;
-		case XKB_KEY_Return:
-		case XKB_KEY_KP_Enter:
-			menu_call_selected_actions(server);
-			break;
-		case XKB_KEY_Escape:
-			menu_close_root(server);
-			cursor_update_focus(server);
-			break;
-		default:
-			continue;
-		}
-		break;
-	}
-}
 
 /* Returns true if the keystroke is consumed */
 static bool
@@ -540,7 +506,6 @@ handle_compositor_keybindings(struct keyboard *keyboard,
 	if (!locked) {
 		if (server->input_mode == LAB_INPUT_STATE_MENU) {
 			key_state_store_pressed_key_as_bound(event->keycode);
-			handle_menu_keys(server, &keyinfo.translated);
 			return true;
 		} else if (server->input_mode == LAB_INPUT_STATE_WINDOW_SWITCHER) {
 			if (handle_cycle_view_key(server, &keyinfo)) {
