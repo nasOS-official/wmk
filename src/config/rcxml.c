@@ -1644,14 +1644,10 @@ load_default_window_switcher_fields(void)
 		enum window_switcher_field_content content;
 		int width;
 	} fields[] = {
-#if HAVE_LIBSFDO
-		{ LAB_FIELD_ICON, 5 },
-		{ LAB_FIELD_DESKTOP_ENTRY_NAME, 30 },
-		{ LAB_FIELD_TITLE, 65 },
-#else
+
 		{ LAB_FIELD_DESKTOP_ENTRY_NAME, 30 },
 		{ LAB_FIELD_TITLE, 70 },
-#endif
+
 	};
 
 	struct window_switcher_field *field;
@@ -1685,16 +1681,13 @@ post_processing(void)
 	}
 
 	if (!rc.title_layout_loaded) {
-#if HAVE_LIBSFDO
-		fill_title_layout("icon:iconify,max,close");
-#else
+
 		/*
 		 * 'icon' is replaced with 'menu' in fill_title_layout() when
 		 * libsfdo is not linked, but we also replace it here not to
 		 * show error message with default settings.
 		 */
 		fill_title_layout("menu:iconify,max,close");
-#endif
 	}
 
 	/*

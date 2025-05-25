@@ -85,23 +85,15 @@ struct wlr_scene_node;
  *
  * NULL scene/view arguments are not allowed.
  */
-struct ssd *ssd_create(struct view *view, bool active);
 struct border ssd_get_margin(const struct ssd *ssd);
 int ssd_get_corner_width(void);
 void ssd_update_margin(struct ssd *ssd);
 void ssd_set_active(struct ssd *ssd, bool active);
-void ssd_update_title(struct ssd *ssd);
 void ssd_update_geometry(struct ssd *ssd);
 void ssd_destroy(struct ssd *ssd);
-void ssd_set_titlebar(struct ssd *ssd, bool enabled);
-void ssd_update_window_icon(struct ssd *ssd);
 
-void ssd_enable_keybind_inhibit_indicator(struct ssd *ssd, bool enable);
-void ssd_enable_shade(struct ssd *ssd, bool enable);
 
 struct ssd_hover_state *ssd_hover_state_new(void);
-void ssd_update_button_hover(struct wlr_scene_node *node,
-	struct ssd_hover_state *hover_state);
 
 enum ssd_part_type ssd_button_get_type(const struct ssd_button *button);
 struct view *ssd_button_get_view(const struct ssd_button *button);

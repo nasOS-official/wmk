@@ -38,7 +38,6 @@
 #include "config/rcxml.h"
 #include "config/session.h"
 #include "decorations.h"
-#include "desktop-entry.h"
 #include "idle.h"
 #include "input/keyboard.h"
 #include "labwc.h"
@@ -47,7 +46,6 @@
 #include "output-state.h"
 #include "output-virtual.h"
 #include "regions.h"
-#include "resize-indicator.h"
 #include "theme.h"
 #include "view.h"
 #include "workspaces.h"
@@ -74,10 +72,6 @@ reload_config_and_theme(struct server *server)
 	theme_finish(server->theme);
 	theme_init(server->theme, server, rc.theme_name);
 
-#if HAVE_LIBSFDO
-	desktop_entry_finish(server);
-	desktop_entry_init(server);
-#endif
 
 
 	seat_reconfigure(server);
@@ -708,9 +702,6 @@ server_init(struct server *server)
 	wlr_xdg_foreign_v1_create(server->wl_display, registry);
 	wlr_xdg_foreign_v2_create(server->wl_display, registry);
 
-#if HAVE_LIBSFDO
-	desktop_entry_init(server);
-#endif
 
 #if HAVE_XWAYLAND
 	xwayland_server_init(server, compositor);
@@ -751,9 +742,6 @@ server_finish(struct server *server)
 {
 #if HAVE_XWAYLAND
 	xwayland_server_finish(server);
-#endif
-#if HAVE_LIBSFDO
-	desktop_entry_finish(server);
 #endif
 	if (sighup_source) {
 		wl_event_source_remove(sighup_source);

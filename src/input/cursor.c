@@ -25,8 +25,6 @@
 #include "labwc.h"
 #include "layers.h"
 #include "regions.h"
-#include "resistance.h"
-#include "resize-outlines.h"
 #include "ssd.h"
 #include "view.h"
 #include "xwayland.h"

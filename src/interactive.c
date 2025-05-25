@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #include <assert.h>
-#include "edges.h"
 #include "input/keyboard.h"
 #include "labwc.h"
 #include "regions.h"
-#include "resize-indicator.h"
 #include "view.h"
 #include "window-rules.h"
 

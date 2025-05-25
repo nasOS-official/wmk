@@ -137,42 +137,5 @@ struct ssd_hover_state {
 struct wlr_buffer;
 struct wlr_scene_tree;
 
-/* SSD internal helpers to create various SSD elements */
-/* TODO: Replace some common args with a struct */
-struct ssd_part *add_scene_part(
-	struct wl_list *part_list, enum ssd_part_type type);
-struct ssd_part *add_scene_rect(
-	struct wl_list *list, enum ssd_part_type type,
-	struct wlr_scene_tree *parent, int width, int height, int x, int y,
-	float color[4]);
-struct ssd_part *add_scene_buffer(
-	struct wl_list *list, enum ssd_part_type type,
-	struct wlr_scene_tree *parent, struct wlr_buffer *buffer, int x, int y);
-struct ssd_part *add_scene_button(struct wl_list *part_list,
-	enum ssd_part_type type, struct wlr_scene_tree *parent,
-	struct lab_img *buffers[LAB_BS_ALL + 1], int x, int y,
-	struct view *view);
-
-/* SSD internal helpers */
-struct ssd_part *ssd_get_part(
-	struct wl_list *part_list, enum ssd_part_type type);
-void ssd_destroy_parts(struct wl_list *list);
-
-/* SSD internal */
-// void ssd_titlebar_create(struct ssd *ssd);
-void ssd_titlebar_update(struct ssd *ssd);
-void ssd_titlebar_destroy(struct ssd *ssd);
-
-void ssd_border_create(struct ssd *ssd);
-void ssd_border_update(struct ssd *ssd);
-void ssd_border_destroy(struct ssd *ssd);
-
-void ssd_extents_create(struct ssd *ssd);
-void ssd_extents_update(struct ssd *ssd);
-void ssd_extents_destroy(struct ssd *ssd);
-
-void ssd_shadow_create(struct ssd *ssd);
-void ssd_shadow_update(struct ssd *ssd);
-void ssd_shadow_destroy(struct ssd *ssd);
 
 #endif /* LABWC_SSD_INTERNAL_H */

@@ -9,42 +9,13 @@
 #include "common/string-helpers.h"
 #include "config.h"
 #include "config/rcxml.h"
-#include "desktop-entry.h"
 #include "img/img.h"
 #include "node.h"
 
 static struct lab_data_buffer *
 _create_buffer(struct scaled_scene_buffer *scaled_buffer, double scale)
 {
-#if HAVE_LIBSFDO
-	struct scaled_icon_buffer *self = scaled_buffer->data;
-	int icon_size = MIN(self->width, self->height);
-	struct lab_img *img = NULL;
-
-	if (self->icon_name) {
-		img = desktop_entry_load_icon(self->server,
-			self->icon_name, icon_size, scale);
-	} else if (self->app_id) {
-		img = desktop_entry_load_icon_from_app_id(self->server,
-			self->app_id, icon_size, scale);
-		if (!img) {
-			img = desktop_entry_load_icon(self->server,
-				rc.fallback_app_icon_name, icon_size, scale);
-		}
-	}
-
-	if (!img) {
-		return NULL;
-	}
-
-	struct lab_data_buffer *buffer =
-		lab_img_render(img, self->width, self->height, scale);
-	lab_img_destroy(img);
-
-	return buffer;
-#else
 	return NULL;
-#endif
 }
 
 static void

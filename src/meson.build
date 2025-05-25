@@ -4,7 +4,6 @@ labwc_sources = files(
   'debug.c',
   'desktop.c',
   'dnd.c',
-  'edges.c',
   'idle.c',
   'interactive.c',
   'layers.c',
@@ -19,7 +18,6 @@ labwc_sources = files(
   'overlay.c',
   'placement.c',
   'regions.c',
-  'resistance.c',
   'seat.c',
   'server.c',
   'session-lock.c',
@@ -41,11 +39,6 @@ if have_xwayland
   )
 endif
 
-if have_libsfdo
-  labwc_sources += files(
-    'desktop-entry.c',
-  )
-endif
 
 subdir('img')
 subdir('common')

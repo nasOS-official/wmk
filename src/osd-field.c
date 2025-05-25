@@ -7,7 +7,6 @@
 #include "view.h"
 #include "workspaces.h"
 #include "labwc.h"
-#include "desktop-entry.h"
 #include "osd.h"
 
 /* includes '%', terminating 's' and NULL byte, 8 is enough for %-9999s */
@@ -48,14 +47,6 @@ get_app_id_or_class(struct view *view, bool trim)
 static const char *
 get_desktop_name(struct view *view)
 {
-#if HAVE_LIBSFDO
-	const char *app_id = view_get_string_prop(view, "app_id");
-	const char *name = desktop_entry_name_lookup(view->server, app_id);
-	if (name) {
-		return name;
-	}
-#endif
-
 	return get_app_id_or_class(view, /* trim */ true);
 }
 

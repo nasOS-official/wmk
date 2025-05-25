@@ -18,7 +18,6 @@
 #include "output-state.h"
 #include "placement.h"
 #include "regions.h"
-#include "resize-indicator.h"
 #include "snap-constraints.h"
 #include "ssd.h"
 #include "view.h"
