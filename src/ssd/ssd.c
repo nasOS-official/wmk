@@ -15,64 +15,6 @@
 #include "theme.h"
 #include "view.h"
 
-struct border
-ssd_thickness(struct view *view)
-{
-	assert(view);
-	/*
-	 * Check preconditions for displaying SSD. Note that this
-	 * needs to work even before ssd_create() has been called.
-	 *
-	 * For that reason we are not using the .enabled state of
-	 * the titlebar node here but rather check for the view
-	 * boolean. If we were to use the .enabled state this would
-	 * cause issues on Reconfigure events with views which were
-	 * in border-only deco mode as view->ssd would only be set
-	 * after ssd_create() returns.
-	 */
-	if (!view->ssd_enabled || view->fullscreen) {
-		return (struct border){ 0 };
-	}
-
-	struct theme *theme = view->server->theme;
-
-	if (view->maximized == VIEW_AXIS_BOTH) {
-		struct border thickness = { 0 };
-		if (!view->ssd_titlebar_hidden) {
-			thickness.top += theme->titlebar_height;
-		}
-		return thickness;
-	}
-
-	struct border thickness = {
-		.top = theme->titlebar_height + theme->border_width,
-		.bottom = theme->border_width,
-		.left = theme->border_width,
-		.right = theme->border_width,
-	};
-
-	if (view->ssd_titlebar_hidden) {
-		thickness.top -= theme->titlebar_height;
-	}
-	return thickness;
-}
-
-struct wlr_box
-ssd_max_extents(struct view *view)
-{
-	assert(view);
-	struct border border = ssd_thickness(view);
-
-	int eff_width = view->current.width;
-	int eff_height = view_effective_height(view, /* use_pending */ false);
-
-	return (struct wlr_box){
-		.x = view->current.x - border.left,
-		.y = view->current.y - border.top,
-		.width = eff_width + border.left + border.right,
-		.height = eff_height + border.top + border.bottom,
-	};
-}
 
 /*
  * Resizing and mouse contexts like 'Left', 'TLCorner', etc. in the vicinity of
@@ -231,58 +173,10 @@ ssd_resize_edges(enum ssd_part_type type)
 struct border
 ssd_get_margin(const struct ssd *ssd)
 {
-	return ssd ? ssd->margin : (struct border){ 0 };
-}
-
-int
-ssd_get_corner_width(void)
-{
-	/* ensure a minimum corner width */
-	return MAX(rc.corner_radius, 5);
-}
-
-void
-ssd_update_margin(struct ssd *ssd)
-{
-	if (!ssd) {
-		return;
-	}
-	ssd->margin = ssd_thickness(ssd->view);
-}
-
-void
-ssd_update_geometry(struct ssd *ssd)
-{
-	if (!ssd) {
-		return;
-	}
-
-	struct view *view = ssd->view;
-	assert(view);
+	return (struct border){ 0 };
 }
 
 
-void
-ssd_destroy(struct ssd *ssd)
-{
-	if (!ssd) {
-		return;
-	}
-
-	/* Maybe reset hover view */
-	struct view *view = ssd->view;
-	struct ssd_hover_state *hover_state;
-	hover_state = view->server->ssd_hover_state;
-	if (hover_state->view == view) {
-		hover_state->view = NULL;
-		hover_state->button = NULL;
-	}
-
-	/* Destroy subcomponents */
-	wlr_scene_node_destroy(&ssd->tree->node);
-
-	free(ssd);
-}
 
 bool
 ssd_part_contains(enum ssd_part_type whole, enum ssd_part_type candidate)

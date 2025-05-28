@@ -86,12 +86,7 @@ struct wlr_scene_node;
  * NULL scene/view arguments are not allowed.
  */
 struct border ssd_get_margin(const struct ssd *ssd);
-int ssd_get_corner_width(void);
-void ssd_update_margin(struct ssd *ssd);
 void ssd_set_active(struct ssd *ssd, bool active);
-void ssd_update_geometry(struct ssd *ssd);
-void ssd_destroy(struct ssd *ssd);
-
 
 struct ssd_hover_state *ssd_hover_state_new(void);
 
@@ -105,9 +100,6 @@ uint32_t ssd_resize_edges(enum ssd_part_type type);
 bool ssd_part_contains(enum ssd_part_type whole, enum ssd_part_type candidate);
 enum ssd_mode ssd_mode_parse(const char *mode);
 
-/* TODO: clean up / update */
-struct border ssd_thickness(struct view *view);
-struct wlr_box ssd_max_extents(struct view *view);
 
 /* SSD debug helpers */
 bool ssd_debug_is_root_node(const struct ssd *ssd, struct wlr_scene_node *node);

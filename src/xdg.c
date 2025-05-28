@@ -330,7 +330,6 @@ handle_destroy(struct wl_listener *listener, void *data)
 
 	/* Remove xdg-shell view specific listeners */
 	wl_list_remove(&xdg_toplevel_view->set_app_id.link);
-	wl_list_remove(&xdg_toplevel_view->request_show_window_menu.link);
 	wl_list_remove(&xdg_toplevel_view->new_popup.link);
 	wl_list_remove(&view->commit.link);
 
@@ -349,7 +348,6 @@ handle_request_move(struct wl_listener *listener, void *data)
 	//  if (view == view->server->seat.pressed.view) {
 	// 	 interactive_begin(view, LAB_INPUT_STATE_MOVE, 0);
 	//  }
- 
 }
 
 static void
@@ -361,7 +359,6 @@ handle_request_resize(struct wl_listener *listener, void *data)
 	//  if (view == view->server->seat.pressed.view) {
 	// 	 interactive_begin(view, LAB_INPUT_STATE_RESIZE, event->edges);
 	//  }
- 
 }
 
 static void

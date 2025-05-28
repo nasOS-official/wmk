@@ -145,34 +145,7 @@ parse_window_type(const char *type)
  * desk         D           All-desktops toggle (aka omnipresent)
  */
 
-static void
-clear_title_layout(void)
-{
-	struct title_button *button, *button_tmp;
-	wl_list_for_each_safe(button, button_tmp, &rc.title_buttons_left, link) {
-		wl_list_remove(&button->link);
-		zfree(button);
-	}
-	wl_list_for_each_safe(button, button_tmp, &rc.title_buttons_right, link) {
-		wl_list_remove(&button->link);
-		zfree(button);
-	}
-	rc.title_layout_loaded = false;
-}
 
-static void
-fill_title_layout(char *content)
-{
-	clear_title_layout();
-
-
-	gchar **parts = g_strsplit(content, ":", -1);
-
-
-	rc.title_layout_loaded = true;
-err:
-	g_strfreev(parts);
-}
 
 static void
 fill_usable_area_override(char *nodename, char *content, struct parser_state *state)
@@ -1067,8 +1040,6 @@ entry(xmlNode *node, char *nodename, char *content, struct parser_state *state)
 		xstrdup_replace(rc.icon_theme_name, content);
 	} else if (!strcasecmp(nodename, "fallbackAppIcon.theme")) {
 		xstrdup_replace(rc.fallback_app_icon_name, content);
-	} else if (!strcasecmp(nodename, "layout.titlebar.theme")) {
-		fill_title_layout(content);
 	} else if (!strcasecmp(nodename, "showTitle.titlebar.theme")) {
 		rc.show_title = parse_bool(content, true);
 	} else if (!strcmp(nodename, "cornerradius.theme")) {
@@ -1680,16 +1651,6 @@ post_processing(void)
 		rc.icon_theme_name = xstrdup(rc.theme_name);
 	}
 
-	if (!rc.title_layout_loaded) {
-
-		/*
-		 * 'icon' is replaced with 'menu' in fill_title_layout() when
-		 * libsfdo is not linked, but we also replace it here not to
-		 * show error message with default settings.
-		 */
-		fill_title_layout("menu:iconify,max,close");
-	}
-
 	/*
 	 * Replace all earlier bindings by later ones
 	 * and clear the ones with an empty action list.
@@ -1937,7 +1898,6 @@ rcxml_finish(void)
 	zfree(rc.workspace_config.prefix);
 	zfree(rc.tablet.output_name);
 
-	clear_title_layout();
 
 	struct usable_area_override *area, *area_tmp;
 	wl_list_for_each_safe(area, area_tmp, &rc.usable_area_overrides, link) {

@@ -1176,7 +1176,7 @@ out:
 static void
 create_corners(struct theme *theme)
 {
-	int corner_width = ssd_get_corner_width();
+	int corner_width = 5;
 
 	struct wlr_box box = {
 		.x = 0,

@@ -1181,7 +1181,6 @@ set_maximized(struct view *view, enum view_axis maximized)
 	 * use up-to-date SSD margin information. Otherwise we will end
 	 * up using an outdated ssd->margin to calculate offsets.
 	 */
-	ssd_update_margin(view->ssd);
 }
 
 /*
@@ -1313,7 +1312,6 @@ view_toggle_visible_on_all_workspaces(struct view *view)
 {
 	assert(view);
 	view->visible_on_all_workspaces = !view->visible_on_all_workspaces;
-	ssd_update_geometry(view->ssd);
 }
 
 void
